@@ -2,7 +2,7 @@
 ## Setting up
 Refer to this page for a more detailed explanation: [Running Airflow in Docker](https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html). This part is done in a Linux environment.
 
-1. Fetch the docker-compose.yaml file for Airflow 2.8.1
+1. Fetch the docker-compose.yaml file for Airflow 2.8.3
 ```bash
 curl -LfO 'https://airflow.apache.org/docs/apache-airflow/2.8.3/docker-compose.yaml'
 ```
