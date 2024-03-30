@@ -27,11 +27,11 @@ def assignment_taskflow():
         # First store Kaggle token kaggle.json at ~/.kaggle/kaggle.json
         api = KaggleApi()
         api.authenticate()
-        # Download and store csv file into folder 'datasets'
-        api.dataset_download_files('sujaykapadnis/lets-do-some-coffee-tasting', 'datasets', unzip=True)
+        # Download and store csv file into folder 'outputs'
+        api.dataset_download_files('sujaykapadnis/lets-do-some-coffee-tasting', 'outputs', unzip=True)
         # Read csv
-        df = pd.read_csv('datasets/GACTT_RESULTS_ANONYMIZED_v2.csv')
-        return 'datasets/GACTT_RESULTS_ANONYMIZED_v2.csv'
+        df = pd.read_csv('outputs/GACTT_RESULTS_ANONYMIZED_v2.csv')
+        return 'outputs/GACTT_RESULTS_ANONYMIZED_v2.csv'
 
     @task
     def transform_coffee_data(csv_file_path):
@@ -68,7 +68,7 @@ def assignment_taskflow():
         coffee_stats['Drink Preferences'] = drink_preferences_dict
         
         # Setting up file directory
-        filename = 'jsons/coffee_stats.json'
+        filename = 'outputs/coffee_stats.json'
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         
         # Serialize coffee_stats into a JSON file
@@ -83,7 +83,7 @@ def assignment_taskflow():
             coffee_stats = json.load(file)
             
         # Setting up file directory
-        plots_path = 'plots'
+        plots_path = 'outputs'
         os.makedirs(plots_path, exist_ok=True)
         image_path_dict = {}
         
@@ -162,7 +162,7 @@ def assignment_taskflow():
         image_path_dict['Drink Preferences'] = drink_preferences_image_path
         
         # Setting up file directory
-        pdfs_path = 'pdfs'
+        pdfs_path = 'outputs'
         os.makedirs(pdfs_path, exist_ok=True)
         
         # Generating PDF
