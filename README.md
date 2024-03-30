@@ -98,3 +98,23 @@ The purpose of Dev Container is to allow for auto-completion when writing code. 
 You have to rebuild the container for the changes to take effect. A pop-up should appear to prompt you to do this, but if not you can click on the blue "><" button on the bottom right of your VS Code window for the option "Rebuild Container".
 
 Click on the blue "><" button on the bottom right of your VS Code window for options to "Reopen in Container" and "Reopen Folder Locally" to switch between local environment and Dev Container environment.
+
+## Modifications to write to `outputs` folder
+Add an `outputs` folder to the local environment, and add the following line to the `docker-compose.yaml` to mount the local folder into the Docker file system.
+```yaml
+x-airflow-common:
+  ...
+  volumes:
+    ...
+    - ${AIRFLOW_PROJ_DIR:-.}/outputs:/opt/airflow/outputs
+```
+I am uncertain if the following modification is necessary, but I just did it to be safe.
+```yaml
+services:
+  airflow-init:
+    command:
+	  ...
+	  mkdir -p /sources/logs /sources/dags /sources/plugins /sources/outputs
+      chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,outputs}
+	  ...
+```
