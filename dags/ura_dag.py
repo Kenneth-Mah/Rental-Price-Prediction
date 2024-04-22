@@ -4,8 +4,11 @@ import requests
 from airflow.decorators import dag, task
 from datetime import datetime
 
-import pandas as pd
 import os, re
+
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 @dag(
     dag_id='ura_data_taskflow',
