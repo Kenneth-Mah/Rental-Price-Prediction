@@ -1,26 +1,14 @@
 import pandas as pd
-import matplotlib.pyplot as plt
 import requests
-import json
 
 from airflow.decorators import dag, task
 from datetime import datetime
 
-from dotenv import load_dotenv
-from kaggle.api.kaggle_api_extended import KaggleApi
 import pandas as pd
-import os, json
-
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-# from textwrap import wrap
-
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
+import os, re
 
 @dag(
-    dag_id='extract_data',
+    dag_id='ura_data_taskflow',
     schedule=None,
     start_date=datetime(2024, 1, 1),
     catchup=False,
@@ -28,6 +16,7 @@ from reportlab.pdfgen import canvas
 )
 def project_taskflow():
     
+    ##extract
     @task
     def get_token():
         my_key = os.getenv("URA_KEY")
@@ -124,16 +113,53 @@ def project_taskflow():
     @task
     def merge_rental_contracts_median_rentals(median_rentals, rental_contracts):
         merged_df = pd.merge(left=rental_contracts, right=median_rentals, how="left", on=["project", "street", "district", "x", "y", "refPeriod"])
-        merged_df.to_csv("outputs/URA_data.csv", index=False)
+        ura_csv_file_path = "outputs/URA_data.csv"
+        merged_df.to_csv(ura_csv_file_path, index=False)
+        return ura_csv_file_path
+        
+    ##transform
+    @task
+    def transform(ura_csv_file_path):
+        
+        def format_area(s):
+            try:
+                lower, upper = s.split("-")
+                lower = int(lower)
+                upper = int(upper)
+                return (lower + upper) / 2
+            except ValueError:
+                pattern = r"(^<|>=|<=|>)(\d+)"
+                match = re.match(pattern, s)
+                return float(match.group(2))
+        
+        df = pd.read_csv(ura_csv_file_path)
+        
+        df["areaSqft_formatted"] = df["areaSqft"].apply(format_area)
+
+        # change leaseDate to datetime and extract year, quarter, month as new features
+        df["leaseDate"] = df.apply(lambda row: datetime(int(row["refPeriod"][:4]), row["leaseDate"] // 100, 1), axis=1)
+        df["leaseYear"] = df["leaseDate"].dt.year
+        df["leaseQuarter"] = df["leaseDate"].dt.quarter
+        df["leaseMonth"] = df["leaseDate"].dt.month
+
+        # Since the IQR is in per square feet, we will not use areaSqm. 
+        # Original areaSqft will also not be used
+        df = df.drop(columns=["areaSqft", "areaSqm"])
+
+        rental_data_for_BI_file_path = "outputs/rental_data_for_BI.csv"
+        df.to_csv(rental_data_for_BI_file_path, index=False)
+        return rental_data_for_BI_file_path
         
         
-    ##call tasks    
+    ##extract tasks   
     my_token = get_token()
     median_rentals = get_median_rental(my_token)
     rental_contracts = write_rental_contracts(median_rentals, my_token)
     formatted_rental_contracts = format_rental_contracts(rental_contracts)
-    merge_rental_contracts_median_rentals(median_rentals, formatted_rental_contracts)
+    ura_csv_file_path = merge_rental_contracts_median_rentals(median_rentals, formatted_rental_contracts)
     
+    #transform tasks
+    rental_data_for_BI_file_path = transform(ura_csv_file_path)
      
 ##call dag   
 project_dag = project_taskflow()
