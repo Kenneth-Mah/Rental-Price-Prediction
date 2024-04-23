@@ -16,6 +16,8 @@ airflow/www/*.log
 !logs/.gitkeep
 /outputs/*
 !outputs/.gitkeep
+/auth/*
+!auth/.gitkeep
 airflow-webserver.pid
 standalone_admin_password.txt
 warnings.txt
@@ -248,5 +250,3 @@ licenses/LICENSES-ui.txt
 
 # airflow-build-dockerfile and correconding ignore file
 airflow-build-dockerfile*
-
-kaggle.json

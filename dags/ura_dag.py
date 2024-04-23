@@ -6,19 +6,8 @@ from datetime import datetime
 
 import os, re
 
-from airflow.providers.google.cloud.operators.bigquery import (
-    BigQueryCreateEmptyDatasetOperator,
-    BigQueryCreateExternalTableOperator,
-    BigQueryDeleteDatasetOperator
-)
-
-from airflow.providers.google.cloud.operators.gcs import GCSCreateBucketOperator, GCSDeleteBucketOperator
-from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
-from airflow.utils.trigger_rule import TriggerRule
-
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
+import pandas_gbq
+from google.oauth2 import service_account
 
 @dag(
     dag_id='ura_data_taskflow',
@@ -167,10 +156,20 @@ def project_taskflow():
     ##load
     @task
     def load(rental_data_for_BI_file_path):
+        service_account_key_file_name = os.getenv("SERVICE_ACCOUNT_KEY_FILE_NAME")
+        airflow_project_directory = os.getenv("AIRFLOW_HOME")
+        
+        service_account_key_file_path = airflow_project_directory + "/auth/" + service_account_key_file_name
+        
+        credentials = service_account.Credentials.from_service_account_file(
+            service_account_key_file_path
+        )
+        
         df = pd.read_csv(rental_data_for_BI_file_path)
+        pandas_gbq.to_gbq(df, "rental-price-prediction.ura_data.rental_data_for_BI", project_id="rental-price-prediction", if_exists="replace", credentials=credentials)
         
         
-    ##extract tasks   
+    #extract tasks
     my_token = get_token()
     median_rentals = get_median_rental(my_token)
     rental_contracts = write_rental_contracts(median_rentals, my_token)

@@ -72,12 +72,14 @@ x-airflow-common:
     KAGGLE_USERNAME: ${KAGGLE_USERNAME}
     KAGGLE_KEY: ${KAGGLE_KEY}
     URA_KEY: ${URA_KEY}
+    SERVICE_ACCOUNT_KEY_FILE_NAME: ${SERVICE_ACCOUNT_KEY_FILE_NAME}
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
     - ${AIRFLOW_PROJ_DIR:-.}/outputs:/opt/airflow/outputs
+    - ${AIRFLOW_PROJ_DIR:-.}/auth:/opt/airflow/auth
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -233,8 +235,8 @@ services:
           echo "   https://airflow.apache.org/docs/apache-airflow/stable/howto/docker-compose/index.html#before-you-begin"
           echo
         fi
-        mkdir -p /sources/logs /sources/dags /sources/plugins /sources/outputs
-        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,outputs}
+        mkdir -p /sources/logs /sources/dags /sources/plugins /sources/outputs /sources/auth
+        chown -R "${AIRFLOW_UID}:0" /sources/{logs,dags,plugins,outputs,auth}
         exec /entrypoint airflow version
     # yamllint enable rule:line-length
     environment:
