@@ -6,6 +6,16 @@ from datetime import datetime
 
 import os, re
 
+from airflow.providers.google.cloud.operators.bigquery import (
+    BigQueryCreateEmptyDatasetOperator,
+    BigQueryCreateExternalTableOperator,
+    BigQueryDeleteDatasetOperator
+)
+
+from airflow.providers.google.cloud.operators.gcs import GCSCreateBucketOperator, GCSDeleteBucketOperator
+from airflow.providers.google.cloud.transfers.local_to_gcs import LocalFilesystemToGCSOperator
+from airflow.utils.trigger_rule import TriggerRule
+
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
@@ -152,6 +162,12 @@ def project_taskflow():
         rental_data_for_BI_file_path = "outputs/rental_data_for_BI.csv"
         df.to_csv(rental_data_for_BI_file_path, index=False)
         return rental_data_for_BI_file_path
+    
+    
+    ##load
+    @task
+    def load(rental_data_for_BI_file_path):
+        df = pd.read_csv(rental_data_for_BI_file_path)
         
         
     ##extract tasks   
@@ -161,8 +177,11 @@ def project_taskflow():
     formatted_rental_contracts = format_rental_contracts(rental_contracts)
     ura_csv_file_path = merge_rental_contracts_median_rentals(median_rentals, formatted_rental_contracts)
     
-    #transform tasks
+    ##transform tasks
     rental_data_for_BI_file_path = transform(ura_csv_file_path)
+    
+    ##load tasks
+    load(rental_data_for_BI_file_path)
      
 ##call dag   
 project_dag = project_taskflow()
