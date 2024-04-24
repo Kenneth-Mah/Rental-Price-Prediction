@@ -69,8 +69,6 @@ x-airflow-common:
     # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
-    KAGGLE_USERNAME: ${KAGGLE_USERNAME}
-    KAGGLE_KEY: ${KAGGLE_KEY}
     URA_KEY: ${URA_KEY}
     SERVICE_ACCOUNT_KEY_FILE_NAME: ${SERVICE_ACCOUNT_KEY_FILE_NAME}
   volumes:
