@@ -16,7 +16,7 @@ from google.oauth2 import service_account
 
 @dag(
     dag_id="bus_stops_taskflow",
-    schedule=None,
+    schedule_interval="@monthly",
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["project"],

@@ -11,9 +11,20 @@ import pandas_gbq
 from google.oauth2 import service_account
 
 
+# Cron expression to trigger on the fourth Friday of every quarter
+# January, April, July, October
+# Cron breakdown:
+# - Minute: 0
+# - Hour: 0
+# - Day of Month: this one is tricky, set as 22-28 and use day of week to determine Friday
+# - Month: 1,4,7,10
+# - Day of Week: 5 (Friday)
+cron_schedule = "0 0 22-28 1,4,7,10 5"
+
+
 @dag(
     dag_id="rental_contracts_taskflow",
-    schedule=None,
+    schedule=cron_schedule,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["project"],
