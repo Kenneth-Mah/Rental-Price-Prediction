@@ -98,7 +98,7 @@ def median_rentals_taskflow():
             credentials=credentials,
         )
 
-    # extract tasks
+    ##extract tasks
     my_token = get_token()
     median_rentals = extract_median_rentals(my_token)
 

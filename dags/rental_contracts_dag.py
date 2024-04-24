@@ -195,7 +195,7 @@ def rental_contracts_taskflow():
             credentials=credentials,
         )
 
-    # extract tasks
+    ##extract tasks
     my_token = get_token()
     rental_contracts = extract_rental_contracts(my_token)
 
