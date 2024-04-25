@@ -13,3 +13,7 @@
 ```bash
 docker compose up
 ```
+
+3. Access the Airflow UI:
+
+Visit `localhost:8080` in your browser and log in with the login `airflow` and the password `airflow`. Filter DAGs by tag `project` and enable the resultant DAGs displayed.

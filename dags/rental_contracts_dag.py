@@ -11,9 +11,19 @@ import pandas_gbq
 from google.oauth2 import service_account
 
 
+# Cron expression to trigger on the 20th of every month
+# Cron breakdown:
+# - Minute: 0
+# - Hour: 0
+# - Day of Month: 20
+# - Month: * (every month)
+# - Day of Week: * (any day of the week)
+cron_schedule = "0 0 20 * *"
+
+
 @dag(
     dag_id="rental_contracts_taskflow",
-    schedule=None,
+    schedule=cron_schedule,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["project"],
@@ -195,7 +205,7 @@ def rental_contracts_taskflow():
             credentials=credentials,
         )
 
-    # extract tasks
+    ##extract tasks
     my_token = get_token()
     rental_contracts = extract_rental_contracts(my_token)
 

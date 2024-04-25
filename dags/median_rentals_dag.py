@@ -10,9 +10,19 @@ import pandas_gbq
 from google.oauth2 import service_account
 
 
+# Cron expression to trigger at midnight on the 1st day of February, May, August, and November
+# Cron breakdown:
+# - Minute: 0
+# - Hour: 0
+# - Day of Month: 1
+# - Month: 2,5,8,11
+# - Day of Week: * (any day of the week)
+cron_schedule = "0 0 1 2,5,8,11 *"
+
+
 @dag(
     dag_id="median_rentals_taskflow",
-    schedule=None,
+    schedule=cron_schedule,
     start_date=datetime(2024, 1, 1),
     catchup=False,
     tags=["project"],
@@ -98,7 +108,7 @@ def median_rentals_taskflow():
             credentials=credentials,
         )
 
-    # extract tasks
+    ##extract tasks
     my_token = get_token()
     median_rentals = extract_median_rentals(my_token)
 
