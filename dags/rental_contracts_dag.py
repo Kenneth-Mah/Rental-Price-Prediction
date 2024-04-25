@@ -11,14 +11,14 @@ import pandas_gbq
 from google.oauth2 import service_account
 
 
-# Cron expression to trigger at midnight on the 1st day of February, May, August, and November
+# Cron expression to trigger on the 20th of every month
 # Cron breakdown:
 # - Minute: 0
 # - Hour: 0
-# - Day of Month: 1
-# - Month: 2,5,8,11
+# - Day of Month: 20
+# - Month: * (every month)
 # - Day of Week: * (any day of the week)
-cron_schedule = "0 0 1 2,5,8,11 *"
+cron_schedule = "0 0 20 * *"
 
 
 @dag(
