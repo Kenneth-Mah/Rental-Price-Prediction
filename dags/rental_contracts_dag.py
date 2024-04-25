@@ -11,15 +11,14 @@ import pandas_gbq
 from google.oauth2 import service_account
 
 
-# Cron expression to trigger on the fourth Friday of every quarter
-# January, April, July, October
+# Cron expression to trigger at midnight on the 1st day of February, May, August, and November
 # Cron breakdown:
 # - Minute: 0
 # - Hour: 0
-# - Day of Month: this one is tricky, set as 22-28 and use day of week to determine Friday
-# - Month: 1,4,7,10
-# - Day of Week: 5 (Friday)
-cron_schedule = "0 0 22-28 1,4,7,10 5"
+# - Day of Month: 1
+# - Month: 2,5,8,11
+# - Day of Week: * (any day of the week)
+cron_schedule = "0 0 1 2,5,8,11 *"
 
 
 @dag(
