@@ -301,7 +301,7 @@ def rental_contracts_taskflow():
                 for index2, row2 in transformed_bus_stops.iterrows():
                     lon2, lat2 = row2['Longitude'], row2['Latitude']
                     distance = calculate_distance(x1, y1, lon2, lat2)
-                    if distance < 1000: # if the distance is less than 1km
+                    if distance < 300: # if the distance is less than 300m
                         num_bus_stops += 1
                 
                 # save calculated result in table for faster access
