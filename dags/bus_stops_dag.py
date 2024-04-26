@@ -101,7 +101,13 @@ def bus_stops_taskflow():
             )
 
         # Convert list to DataFrame
-        transformed_bus_stops = pd.DataFrame(bus_stops)
+        df = pd.DataFrame(bus_stops)
+        
+        # remove same detail bus stop
+        df = df.drop_duplicates(subset=['BusStopID'])
+        
+        # reorder index
+        transformed_bus_stops  = df.reset_index(drop=True)
         return transformed_bus_stops
 
     ##load
