@@ -7,6 +7,10 @@ from datetime import datetime
 import os, calendar, re
 from datetime import datetime, timedelta
 
+import xml.etree.ElementTree as ET
+
+from pyproj import Proj, transform, Geod
+
 import pandas_gbq
 from google.oauth2 import service_account
 
@@ -130,6 +134,16 @@ def rental_contracts_taskflow():
                 [rental_contracts, get_rental_contracts_per_refPeriod(period)], axis=0
             )
         return rental_contracts
+    
+    @task
+    def extract_bus_stops():
+        url = "https://www.lta.gov.sg/map/busService/bus_stops.xml"
+        response = requests.get(url)
+        bus_stops_file_path = "outputs/bus_stops.xml"
+        with open(bus_stops_file_path, "wb") as f:
+            f.write(response.content)
+            print("File downloaded successfully")
+        return bus_stops_file_path
 
     ##transform
     @task
@@ -182,6 +196,119 @@ def rental_contracts_taskflow():
             columns=["areaSqft", "areaSqm"]
         )
         return transformed_rental_contracts
+    
+    @task
+    def transform_bus_stops(bus_stops_file_path):
+        # Load and parse the XML file
+        tree = ET.parse(bus_stops_file_path)
+        root = tree.getroot()
+
+        # Prepare a list to hold all bus stop data
+        bus_stops = []
+
+        # Define the projection for SVY21
+        svy21_proj = Proj(init="epsg:3414")  # EPSG code for SVY21
+        # Define the projection for WGS84
+        wgs84_proj = Proj(init="epsg:4326")  # EPSG code for WGS84
+
+        # Convert from WGS84 to SVY21
+        def wgs84_to_svy21(latitude, longitude):
+            easting, northing = transform(wgs84_proj, svy21_proj, longitude, latitude)
+            return northing, easting
+
+        # Convert from SVY21 to WGS84
+        # def svy21_to_wgs84(northing, easting):
+        #     lon, lat = transform(svy21_proj, wgs84_proj, easting, northing)
+        #     return lat, lon
+
+        # Iterate through each bus stop in the XML
+        for bus_stop in root.findall(".//busstop"):
+            # print(bus_stop)
+            # Extract elements from each BusStop
+            bus_stop_id = (
+                bus_stop.find("details").text
+                if bus_stop.find("details") is not None
+                else None
+            )
+            bus_stop_cor = (
+                bus_stop.find("coordinates")
+                if bus_stop.find("coordinates") is not None
+                else None
+            )
+            # print(type(bus_stop。or))
+            # print(bus_stop_cor)
+            latitude = (
+                bus_stop_cor.find("lat").text
+                if bus_stop_cor.find("lat") is not None
+                else None
+            )
+            longitude = (
+                bus_stop_cor.find("long").text
+                if bus_stop_cor.find("long") is not None
+                else None
+            )
+
+            x, y = wgs84_to_svy21(float(latitude), float(longitude))
+            # Append to list
+            bus_stops.append(
+                {
+                    "BusStopID": bus_stop_id,
+                    # 'BusStopCode': bus_stop_code,
+                    # 'Description': description,
+                    "Latitude": latitude,
+                    "Longitude": longitude,
+                    "x": x,
+                    "y": y,
+                }
+            )
+
+        # Convert list to DataFrame
+        df = pd.DataFrame(bus_stops)
+        
+        # remove same detail bus stop
+        df = df.drop_duplicates(subset=['BusStopID'])
+        
+        # reorder index
+        transformed_bus_stops  = df.reset_index(drop=True)
+        return transformed_bus_stops
+    
+    @task
+    def calculate_bus_stops(transformed_rental_contracts, transformed_bus_stops):
+        # Initialize the SVY21 projection
+        svy21_proj = Proj(init='EPSG:3414')  # EPSG code for SVY21
+
+        # Create a geodesic object to calculate distance
+        geod = Geod(ellps='WGS84')
+
+        # Convert SVY21 coordinates to latitude and longitude
+        def calculate_distance(x1, y1, lon2, lat2):
+            lon1, lat1 = svy21_proj(x1, y1, inverse=True)
+
+            # Calculate distance
+            angle1, angle2, distance = geod.inv(lon1, lat1, lon2, lat2)
+
+            return distance
+        
+        # calculate distance between bus stops and rental contracts
+        distance_dict = {}
+        for index, row in transformed_rental_contracts.iterrows():
+            num_bus_stops = 0
+            x1, y1 = row['x'], row['y']
+            # check if x,y has been calculated before
+            if (x1, y1) in distance_dict:
+                num_bus_stops = distance_dict[(x1, y1)]
+            else:
+                for index2, row2 in transformed_bus_stops.iterrows():
+                    lon2, lat2 = row2['Longitude'], row2['Latitude']
+                    distance = calculate_distance(x1, y1, lon2, lat2)
+                    if distance < 300: # if the distance is less than 300m
+                        num_bus_stops += 1
+                
+                # save calculated result in table for faster access
+                distance_dict[(x1, y1)] = num_bus_stops
+            # add a new column to the transformed_rental_contracts with the distance between the bus stop and the rental contract
+            transformed_rental_contracts.at[index, 'num_bus_stops'] = num_bus_stops
+        return transformed_rental_contracts
 
     ##load
     @task
@@ -208,12 +335,15 @@ def rental_contracts_taskflow():
     ##extract tasks
     my_token = get_token()
     rental_contracts = extract_rental_contracts(my_token)
+    bus_stops_file_path = extract_bus_stops()
 
     ##transform tasks
     transformed_rental_contracts = transform_rental_contracts(rental_contracts)
+    transformed_bus_stops = transform_bus_stops(bus_stops_file_path)
+    rental_contracts_with_bus_stops = calculate_bus_stops(transformed_rental_contracts, transformed_bus_stops)
 
     ##load tasks
-    load_rental_contracts(transformed_rental_contracts)
+    load_rental_contracts(rental_contracts_with_bus_stops)
 
 
 ##call dag
